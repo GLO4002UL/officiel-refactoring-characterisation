@@ -1,4 +1,4 @@
-package ca.ulaval.glo4002.characterisation;
+package ca.ulaval.glo4002.characterisation.refactor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -14,21 +14,21 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class CharacterizeMeTest {
+public class DealerCharacterizationTest {
 
   public static final int SAMPLE_SIZE = 1000;
 
-  private CharacterizeMe cut;
+  private Dealer cut;
 
   @BeforeEach
   public void setUp() {
-    cut = new CharacterizeMe();
+    cut = new Dealer();
   }
 
   private static Stream<Arguments> provideArgumentsBsLength3() {
     List<Arguments> arguments = new ArrayList<>();
-    for (MyStruct ps : getAllPsCombinations()) {
-      for (MyStruct bs : getAllThreeCombinations()) {
+    for (Hand ps : getAllPsCombinations()) {
+      for (Hand bs : getAllThreeCombinations()) {
         arguments.add(Arguments.of(ps, bs, false));
       }
     }
@@ -37,17 +37,17 @@ public class CharacterizeMeTest {
 
   @ParameterizedTest
   @MethodSource("provideArgumentsBsLength3")
-  void givenBsWithLength3_whenD_thenReturnsFalse(MyStruct ps, MyStruct bs) {
-    boolean observed = cut.d(ps, bs);
+  void givenBsWithLength3_whenD_thenReturnsFalse(Hand ps, Hand bs) {
+    boolean observed = cut.shouldDealBankerThirdCard(ps, bs);
 
     assertFalse(observed);
   }
 
   private static Stream<Arguments> provideArgumentsNs8or9() {
     List<Arguments> arguments = new ArrayList<>();
-    for (MyStruct ps : getAllPsCombinations()) {
-      for (MyStruct bs : getAllBsCombinations()) {
-        if (ps.ns() >= 8 || bs.ns() >= 8) {
+    for (Hand ps : getAllPsCombinations()) {
+      for (Hand bs : getAllBsCombinations()) {
+        if (ps.hasNaturalWin() || bs.hasNaturalWin()) {
           arguments.add(Arguments.of(ps, bs));
         }
       }
@@ -57,17 +57,17 @@ public class CharacterizeMeTest {
 
   @ParameterizedTest
   @MethodSource("provideArgumentsNs8or9")
-  void givenBsLength2AndBsOrPsHasNs8or9_whenD_thenReturnsFalse(MyStruct ps, MyStruct bs) {
-    boolean observed = cut.d(ps, bs);
+  void givenBsLength2AndBsOrPsHasNs8or9_whenD_thenReturnsFalse(Hand ps, Hand bs) {
+    boolean observed = cut.shouldDealBankerThirdCard(ps, bs);
 
     assertFalse(observed);
   }
 
   private static Stream<Arguments> provideArgumentsPsHasNoT() {
     List<Arguments> arguments = new ArrayList<>();
-    for (MyStruct ps : getAllTwoCombinations()) {
-      for (MyStruct bs : getAllBsCombinations()) {
-        if (ps.ns() < 8 && bs.ns() < 8) {
+    for (Hand ps : getAllTwoCombinations()) {
+      for (Hand bs : getAllBsCombinations()) {
+        if (!ps.hasNaturalWin() && bs.hasNaturalWin()) {
           arguments.add(Arguments.of(ps, bs));
         }
       }
@@ -77,19 +77,19 @@ public class CharacterizeMeTest {
 
   @ParameterizedTest
   @MethodSource("provideArgumentsPsHasNoT")
-  void givenBsWithLength2AndNeitherNs8or9AndPsHasNoT_whenD_thenReturnsTrueIfBsSIsLessOrEqualsTo5(MyStruct ps, MyStruct bs) {
-    boolean expected = bs.s() <= 5;
+  void givenBsWithLength2AndNeitherNs8or9AndPsHasNoT_whenD_thenReturnsTrueIfBsSIsLessOrEqualsTo5(Hand ps, Hand bs) {
+    boolean expected = bs.score() <= 5;
 
-    boolean observed = cut.d(ps, bs);
+    boolean observed = cut.shouldDealBankerThirdCard(ps, bs);
 
     assertEquals(expected, observed);
   }
 
   private static Stream<Arguments> provideArgumentsPsHasTAndBsSIsLessOrEqualsTo2() {
     List<Arguments> arguments = new ArrayList<>();
-    for (MyStruct ps : getAllThreeCombinations()) {
-      for (MyStruct bs : getAllBsCombinations()) {
-        if (ps.ns() < 8 && bs.s() <= 2) {
+    for (Hand ps : getAllThreeCombinations()) {
+      for (Hand bs : getAllBsCombinations()) {
+        if (!ps.hasNaturalWin() && bs.score() <= 2) {
           arguments.add(Arguments.of(ps, bs));
         }
       }
@@ -99,8 +99,8 @@ public class CharacterizeMeTest {
 
   @ParameterizedTest
   @MethodSource("provideArgumentsPsHasTAndBsSIsLessOrEqualsTo2")
-  void givenBsWithLength2AndNeitherNs8or9AndPsHasTAndBsSIsLessOrEqualsTo2_whenD_thenReturnsTrue(MyStruct ps, MyStruct bs) {
-    boolean observed = cut.d(ps, bs);
+  void givenBsWithLength2AndNeitherNs8or9AndPsHasTAndBsSIsLessOrEqualsTo2_whenD_thenReturnsTrue(Hand ps, Hand bs) {
+    boolean observed = cut.shouldDealBankerThirdCard(ps, bs);
 
     assertTrue(observed);
   }
@@ -111,10 +111,10 @@ public class CharacterizeMeTest {
 
   @ParameterizedTest
   @MethodSource("provideArgumentsPsHasTAndBsSEquals3")
-  void givenBsWithLength2AndNeitherNs8or9AndPsHasTAndBsSEquals3_whenD_thenReturnsTrueIfPsTIsNot8(MyStruct ps, MyStruct bs) {
-    boolean expected = ps.t().get() != 8;
+  void givenBsWithLength2AndNeitherNs8or9AndPsHasTAndBsSEquals3_whenD_thenReturnsTrueIfPsTIsNot8(Hand ps, Hand bs) {
+    boolean expected = ps.thirdCard().get() != 8;
 
-    boolean observed = cut.d(ps, bs);
+    boolean observed = cut.shouldDealBankerThirdCard(ps, bs);
 
     assertEquals(expected, observed);
   }
@@ -125,10 +125,10 @@ public class CharacterizeMeTest {
 
   @ParameterizedTest
   @MethodSource("provideArgumentsPsHasTAndBsSEquals4")
-  void givenBsWithLength2AndNeitherNs8or9AndPsHasTAndBsSEquals4_whenD_thenReturnsTrueIfPsTIsBetween2And7(MyStruct ps, MyStruct bs) {
-    boolean expected = ps.t().get() >= 2 && ps.t().get() <= 7;
+  void givenBsWithLength2AndNeitherNs8or9AndPsHasTAndBsSEquals4_whenD_thenReturnsTrueIfPsTIsBetween2And7(Hand ps, Hand bs) {
+    boolean expected = ps.thirdCard().get() >= 2 && ps.thirdCard().get() <= 7;
 
-    boolean observed = cut.d(ps, bs);
+    boolean observed = cut.shouldDealBankerThirdCard(ps, bs);
 
     assertEquals(expected, observed);
   }
@@ -139,10 +139,10 @@ public class CharacterizeMeTest {
 
   @ParameterizedTest
   @MethodSource("provideArgumentsPsHasTAndBsSEquals5")
-  void givenBsWithLength2AndNeitherNs8or9AndPsHasTAndBsSEquals5_whenD_thenReturnsTrueIfPsTIsBetween4And7(MyStruct ps, MyStruct bs) {
-    boolean expected = ps.t().get() >= 4 && ps.t().get() <= 7;
+  void givenBsWithLength2AndNeitherNs8or9AndPsHasTAndBsSEquals5_whenD_thenReturnsTrueIfPsTIsBetween4And7(Hand ps, Hand bs) {
+    boolean expected = ps.thirdCard().get() >= 4 && ps.thirdCard().get() <= 7;
 
-    boolean observed = cut.d(ps, bs);
+    boolean observed = cut.shouldDealBankerThirdCard(ps, bs);
 
     assertEquals(expected, observed);
   }
@@ -153,10 +153,10 @@ public class CharacterizeMeTest {
 
   @ParameterizedTest
   @MethodSource("provideArgumentsPsHasTAndBsSEquals6")
-  void givenBsWithLength2AndNeitherNs8or9AndPsHasTAndBsSEquals6_whenD_thenReturnsTrueIfPsTIsBetween6And7(MyStruct ps, MyStruct bs) {
-    boolean expected = ps.t().get() >= 6 && ps.t().get() <= 7;
+  void givenBsWithLength2AndNeitherNs8or9AndPsHasTAndBsSEquals6_whenD_thenReturnsTrueIfPsTIsBetween6And7(Hand ps, Hand bs) {
+    boolean expected = ps.thirdCard().get() >= 6 && ps.thirdCard().get() <= 7;
 
-    boolean observed = cut.d(ps, bs);
+    boolean observed = cut.shouldDealBankerThirdCard(ps, bs);
 
     assertEquals(expected, observed);
   }
@@ -167,17 +167,17 @@ public class CharacterizeMeTest {
 
   @ParameterizedTest
   @MethodSource("provideArgumentsPsHasTAndBsSEquals7")
-  void givenBsWithLength2AndNeitherNs8or9AndPsHasTAndBsSEquals7_whenD_thenReturnsFalse(MyStruct ps, MyStruct bs) {
-    boolean observed = cut.d(ps, bs);
+  void givenBsWithLength2AndNeitherNs8or9AndPsHasTAndBsSEquals7_whenD_thenReturnsFalse(Hand ps, Hand bs) {
+    boolean observed = cut.shouldDealBankerThirdCard(ps, bs);
 
     assertFalse(observed);
   }
 
   private static Stream<Arguments> provideArgumentsPHasTAndBsSEqualsTo(int bsS) {
     List<Arguments> arguments = new ArrayList<>();
-    for (MyStruct ps : getAllThreeCombinations()) {
-      for (MyStruct bs : getAllBsCombinations()) {
-        if (ps.ns() < 8 && bs.s() == bsS) {
+    for (Hand ps : getAllThreeCombinations()) {
+      for (Hand bs : getAllBsCombinations()) {
+        if (!ps.hasNaturalWin() && bs.score() == bsS) {
           arguments.add(Arguments.of(ps, bs));
         }
       }
@@ -185,33 +185,33 @@ public class CharacterizeMeTest {
     return sampleArguments(arguments);
   }
 
-  private static List<MyStruct> getAllPsCombinations() {
-    List<MyStruct> combinations = new ArrayList<>();
+  private static List<Hand> getAllPsCombinations() {
+    List<Hand> combinations = new ArrayList<>();
     combinations.addAll(getAllTwoCombinations());
     combinations.addAll(getAllThreeCombinations());
     return combinations;
   }
 
-  private static List<MyStruct> getAllBsCombinations() {
+  private static List<Hand> getAllBsCombinations() {
     return getAllTwoCombinations();
   }
 
-  private static List<MyStruct> getAllTwoCombinations() {
-    List<MyStruct> combinations = new ArrayList<>();
+  private static List<Hand> getAllTwoCombinations() {
+    List<Hand> combinations = new ArrayList<>();
     for (int i : IntStream.range(0, 10).toArray()) {
       for (int j : IntStream.range(0, 10).toArray()) {
-        combinations.add(new MyStruct(new int[]{i, j}));
+        combinations.add(new Hand(new int[]{i, j}));
       }
     }
     return combinations;
   }
 
-  private static List<MyStruct> getAllThreeCombinations() {
-    List<MyStruct> combinations = new ArrayList<>();
+  private static List<Hand> getAllThreeCombinations() {
+    List<Hand> combinations = new ArrayList<>();
     for (int i : IntStream.range(0, 10).toArray()) {
       for (int j : IntStream.range(0, 10).toArray()) {
         for (int k : IntStream.range(0, 10).toArray()) {
-          combinations.add(new MyStruct(new int[]{i, j, k}));
+          combinations.add(new Hand(new int[]{i, j, k}));
         }
       }
     }
